@@ -196,7 +196,7 @@ int main(int argc, char *argv[])
 		int retval = BASE64_ERROR_PARSE_ARG1;
 		if(mode & BASE64_MODE_ENCODE)
 			retval = base64_encode(input, output);
-		else if(mode == BASE64_MODE_DECODE)
+		else if(mode & BASE64_MODE_DECODE)
 			retval = base64_decode(input, output);
 		/* Close streams and return */
 		BASE64_CLOSE_STREAMS(input, output, mode);
