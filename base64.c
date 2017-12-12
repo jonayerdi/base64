@@ -1,38 +1,20 @@
 
-#include <stddef.h>
-#include <stdio.h>
-#include <string.h>
-
-#define BASE64_MODE_NULL 0
-#define BASE64_MODE_ENCODE 1
-#define BASE64_MODE_DECODE 2
-#define BASE64_MODE_STDIN 4
-#define BASE64_MODE_STDOUT 8
-
-#define BASE64_ERROR_ARGS -1
-#define BASE64_ERROR_OPEN_INPUT -2
-#define BASE64_ERROR_OUTPUT_EXISTS -3
-#define BASE64_ERROR_OPEN_OUTPUT -4
-#define BASE64_ERROR_PARSE_ARG1 -5
-#define BASE64_ERROR_READING -6
-#define BASE64_ERROR_WRITING -7
-#define BASE64_ERROR_DECODE -8
-
-/* !! Must be a multiple of 3 !! */
-#define BASE64_BUFFER_SIZE 3072
+#include "base64.h"
 
 static char const *const base64_encode_lookup 
 	= "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-//static char const *const base64_decode_lookup = {};
+#define NA ((char)0xFF)
 
-#define BASE64_CLOSE_STREAMS(ISTREAM, OSTREAM, MODE) \
-{ \
-	if((!((MODE) & BASE64_MODE_STDIN) && ((ISTREAM) != NULL))) \
-		fclose(ISTREAM); \
-	if((!((MODE) & BASE64_MODE_STDOUT) && ((OSTREAM) != NULL))) \
-		fclose(OSTREAM); \
-}
+static char const base64_decode_lookup[] 
+	= { NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA
+	, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 62, NA, NA, NA, 63, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, NA, NA, NA, NA, NA
+	, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA
+	, NA, NA, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, NA, NA, NA, NA
+	, NA, NA, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, NA, NA, NA, NA
+	, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA
+	, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA
+	, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA };
 
 #define BASE64_ENCODE_3(BUFF_IN, BUFF_OUT) \
 { \
@@ -58,8 +40,12 @@ static char const *const base64_encode_lookup
 	(BUFF_OUT)[3] = '='; \
 }
 
-int base64_encode(FILE *input, FILE *output);
-int base64_decode(FILE *input, FILE *output);
+#define BASE64_DECODE(BUFF_IN, BUFF_OUT) \
+{ \
+	(BUFF_OUT)[0] = (base64_decode_lookup[(BUFF_IN)[0]] << 2) | (base64_decode_lookup[(BUFF_IN)[1]] >> 4); \
+	(BUFF_OUT)[1] = (base64_decode_lookup[(BUFF_IN)[1]] << 4) | (base64_decode_lookup[(BUFF_IN)[2]] >> 2); \
+	(BUFF_OUT)[2] = (base64_decode_lookup[(BUFF_IN)[2]] << 6) | (base64_decode_lookup[(BUFF_IN)[3]] >> 0); \
+}
 
 int base64_encode(FILE *input, FILE *output)
 {
@@ -124,82 +110,4 @@ int base64_decode(FILE *input, FILE *output)
 {
 	
 	return 0;
-}
-
-int main(int argc, char *argv[])
-{
-	/* Declare variables */
-	FILE *input = NULL;
-	FILE *output = NULL;
-	char mode = BASE64_MODE_NULL;
-	/* Check args count */
-	if(argc != 4)
-	{
-		printf("Usage:\n");
-		printf("base64 <e|encode|d|decode> <file_in> <file_out>\n");
-		printf("If <file_in> is set to * the program reads from stdin\n");
-		printf("If <file_out> is set to * the program writes to stdout\n");
-		return BASE64_ERROR_ARGS;
-	}
-	/* Parse args and run program */
-	else
-	{
-		/* Parse arg 1 -> BASE64_MODE_ENCODE or BASE64_MODE_DECODE */
-		if(!strcmp(argv[1], "e") || !strcmp(argv[1], "encode"))
-			mode = BASE64_MODE_ENCODE;
-		else if(!strcmp(argv[1], "d") || !strcmp(argv[1], "decode"))
-			mode = BASE64_MODE_DECODE;
-		else
-		{
-			printf("Error: first argument must be one of these:\ne\nencode\nd\ndecode\n");
-			return BASE64_ERROR_PARSE_ARG1;
-		}
-		/* Parse arg 2 -> Input stream */
-		if(!strcmp(argv[2], "*"))
-		{
-			input = stdin;
-			mode |= BASE64_MODE_STDIN;
-		}
-		else
-		{
-			input = fopen(argv[2], "rb");
-			if(input == NULL)
-			{
-				printf("Error opening input file %s\n", argv[2]);
-				return BASE64_ERROR_OPEN_INPUT;
-			}
-		}
-		/* Parse arg 3 -> Output stream */
-		if(!strcmp(argv[3], "*"))
-		{
-			output = stdout;
-			mode |= BASE64_MODE_STDOUT;
-		}
-		else
-		{
-			output = fopen(argv[3], "rb");
-			if(output != NULL)
-			{
-				BASE64_CLOSE_STREAMS(input, output, mode);
-				printf("Error: output file %s already exists\n", argv[3]);
-				return BASE64_ERROR_OUTPUT_EXISTS;
-			}
-			output = fopen(argv[3], "wb");
-			if(output == NULL)
-			{
-				BASE64_CLOSE_STREAMS(input, output, mode);
-				printf("Error opening output file %s\n", argv[3]);
-				return BASE64_ERROR_OPEN_OUTPUT;
-			}
-		}
-		/* Encode or decode input stream into output stream */
-		int retval = BASE64_ERROR_PARSE_ARG1;
-		if(mode & BASE64_MODE_ENCODE)
-			retval = base64_encode(input, output);
-		else if(mode & BASE64_MODE_DECODE)
-			retval = base64_decode(input, output);
-		/* Close streams and return */
-		BASE64_CLOSE_STREAMS(input, output, mode);
-		return retval;
-	}
 }
