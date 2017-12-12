@@ -19,7 +19,7 @@
 #define BASE64_DECODE_BUFFER_SIZE 512
 
 int base64_encode(const char *input, size_t size, char *output);
-int base64_decode(const char *input, size_t size, char *output);
+int base64_decode(const char *input, size_t size, char *output, size_t *output_size);
 
 int base64_encode_file(FILE *input, FILE *output);
 int base64_decode_file(FILE *input, FILE *output);

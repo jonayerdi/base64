@@ -8,10 +8,10 @@ char const *const base64_encode_lookup
 
 char const base64_decode_lookup[] 
 	= { NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA
-	, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 62, NA, NA, NA, 63, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, NA, NA, NA, NA, NA
-	, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA
-	, NA, NA, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, NA, NA, NA, NA
-	, NA, NA, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, NA, NA, NA, NA
+	, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 62, NA, NA, NA, 63, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, NA, NA, NA, NA, NA, NA
+	, NA, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, NA, NA, NA, NA, NA
+	, NA, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, NA, NA, NA, NA, NA
+    , NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA
 	, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA
 	, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA
 	, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA };
@@ -65,15 +65,19 @@ inline int base64_encode(const char *input, size_t size, char *output)
 	return 0;
 }
 
-inline int base64_decode(const char *input, size_t size, char *output)
+inline int base64_decode(const char *input, size_t size, char *output, size_t *output_size)
 {
-	if((size % 4) != 0)
+	if(size > 0)
 	{
-		return BASE64_ERROR_DECODE_SIZE;
-	}
-	for(size_t i = 0 ; i < (size / 4) ; i++)
-	{
-		BASE64_DECODE(input + (4 * i), output + (3 * i));
+		if((size % 4) != 0)
+		{
+			return BASE64_ERROR_DECODE_SIZE;
+		}
+		for(size_t i = 0 ; i < (size / 4) ; i++)
+		{
+			BASE64_DECODE(input + (4 * i), output + (3 * i));
+		}
+		*output_size = ((input[size - 1] == '=') ? ((input[size - 2] == '=') ? (BASE64_DECODED_SIZE(size) - 2) : (BASE64_DECODED_SIZE(size) - 1) ) : (BASE64_DECODED_SIZE(size)));
 	}
 	return 0;
 }
@@ -142,12 +146,13 @@ int base64_decode_file(FILE *input, FILE *output)
 	char buffer_in[BASE64_DECODE_BUFFER_SIZE];
 	char buffer_out[BASE64_DECODED_SIZE(BASE64_DECODE_BUFFER_SIZE)];
 	size_t read;
+	size_t decoded;
 	size_t written;
 	do
 	{
 		read = fread(buffer_in, 1, BASE64_DECODE_BUFFER_SIZE, input);
-		base64_decode(buffer_in, read, buffer_out);
-		written = fwrite(buffer_out, BASE64_DECODED_SIZE(read), 1, output);
+		base64_decode(buffer_in, read, buffer_out, &decoded);
+		written = fwrite(buffer_out, decoded, 1, output);
 		if(written < 1)
 			return BASE64_ERROR_WRITING;
 	} while(read == BASE64_DECODE_BUFFER_SIZE);
