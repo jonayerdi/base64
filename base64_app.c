@@ -94,9 +94,9 @@ int main(int argc, char *argv[])
 		/* Encode or decode input stream into output stream */
 		int retval = BASE64_ERROR_PARSE_ARG1;
 		if(mode & BASE64_MODE_ENCODE)
-			retval = base64_encode(input, output);
+			retval = base64_encode_file(input, output);
 		else if(mode & BASE64_MODE_DECODE)
-			retval = base64_decode(input, output);
+			retval = base64_decode_file(input, output);
 		/* Close streams and return */
 		BASE64_CLOSE_STREAMS(input, output, mode);
 		return retval;

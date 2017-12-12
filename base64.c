@@ -1,12 +1,12 @@
 
 #include "base64.h"
 
-static char const *const base64_encode_lookup 
+char const *const base64_encode_lookup 
 	= "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-#define NA ((char)0xFF)
+#define NA ((char)0)
 
-static char const base64_decode_lookup[] 
+char const base64_decode_lookup[] 
 	= { NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA
 	, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 62, NA, NA, NA, 63, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, NA, NA, NA, NA, NA
 	, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA
@@ -18,38 +18,69 @@ static char const base64_decode_lookup[]
 
 #define BASE64_ENCODE_3(BUFF_IN, BUFF_OUT) \
 { \
-	(BUFF_OUT)[0] = base64_encode_lookup[(((BUFF_IN)[0] & 0xFC)>>2)]; \
-	(BUFF_OUT)[1] = base64_encode_lookup[((((BUFF_IN)[0] & 0x03)<<4) | (((BUFF_IN)[1] & 0xF0)>>4))]; \
-	(BUFF_OUT)[2] = base64_encode_lookup[((((BUFF_IN)[1] & 0x0F)<<2) | (((BUFF_IN)[2] & 0xC0)>>6))]; \
-	(BUFF_OUT)[3] = base64_encode_lookup[(((BUFF_IN)[2] & 0x3F)>>0)]; \
+	(BUFF_OUT)[0] = base64_encode_lookup[(unsigned char)(((BUFF_IN)[0] & 0xFC)>>2)]; \
+	(BUFF_OUT)[1] = base64_encode_lookup[(unsigned char)((((BUFF_IN)[0] & 0x03)<<4) | (((BUFF_IN)[1] & 0xF0)>>4))]; \
+	(BUFF_OUT)[2] = base64_encode_lookup[(unsigned char)((((BUFF_IN)[1] & 0x0F)<<2) | (((BUFF_IN)[2] & 0xC0)>>6))]; \
+	(BUFF_OUT)[3] = base64_encode_lookup[(unsigned char)(((BUFF_IN)[2] & 0x3F)>>0)]; \
 }
 
 #define BASE64_ENCODE_2(BUFF_IN, BUFF_OUT) \
 { \
-	(BUFF_OUT)[0] = base64_encode_lookup[(((BUFF_IN)[0] & 0xFC)>>2)]; \
-	(BUFF_OUT)[1] = base64_encode_lookup[((((BUFF_IN)[0] & 0x03)<<4) | (((BUFF_IN)[1] & 0xF0)>>4))]; \
-	(BUFF_OUT)[2] = base64_encode_lookup[(((BUFF_IN)[1] & 0x0F)<<2)]; \
+	(BUFF_OUT)[0] = base64_encode_lookup[(unsigned char)(((BUFF_IN)[0] & 0xFC)>>2)]; \
+	(BUFF_OUT)[1] = base64_encode_lookup[(unsigned char)((((BUFF_IN)[0] & 0x03)<<4) | (((BUFF_IN)[1] & 0xF0)>>4))]; \
+	(BUFF_OUT)[2] = base64_encode_lookup[(unsigned char)(((BUFF_IN)[1] & 0x0F)<<2)]; \
 	(BUFF_OUT)[3] = '='; \
 }
 
 #define BASE64_ENCODE_1(BUFF_IN, BUFF_OUT) \
 { \
-	(BUFF_OUT)[0] = base64_encode_lookup[(((BUFF_IN)[0] & 0xFC)>>2)]; \
-	(BUFF_OUT)[1] = base64_encode_lookup[(((BUFF_IN)[0] & 0x03)<<4)]; \
+	(BUFF_OUT)[0] = base64_encode_lookup[(unsigned char)(((BUFF_IN)[0] & 0xFC)>>2)]; \
+	(BUFF_OUT)[1] = base64_encode_lookup[(unsigned char)(((BUFF_IN)[0] & 0x03)<<4)]; \
 	(BUFF_OUT)[2] = '='; \
 	(BUFF_OUT)[3] = '='; \
 }
 
 #define BASE64_DECODE(BUFF_IN, BUFF_OUT) \
 { \
-	(BUFF_OUT)[0] = (base64_decode_lookup[(BUFF_IN)[0]] << 2) | (base64_decode_lookup[(BUFF_IN)[1]] >> 4); \
-	(BUFF_OUT)[1] = (base64_decode_lookup[(BUFF_IN)[1]] << 4) | (base64_decode_lookup[(BUFF_IN)[2]] >> 2); \
-	(BUFF_OUT)[2] = (base64_decode_lookup[(BUFF_IN)[2]] << 6) | (base64_decode_lookup[(BUFF_IN)[3]] >> 0); \
+	(BUFF_OUT)[0] = (base64_decode_lookup[(unsigned char)(BUFF_IN)[0]] << 2) | (base64_decode_lookup[(unsigned char)(BUFF_IN)[1]] >> 4); \
+	(BUFF_OUT)[1] = (base64_decode_lookup[(unsigned char)(BUFF_IN)[1]] << 4) | (base64_decode_lookup[(unsigned char)(BUFF_IN)[2]] >> 2); \
+	(BUFF_OUT)[2] = (base64_decode_lookup[(unsigned char)(BUFF_IN)[2]] << 6) | (base64_decode_lookup[(unsigned char)(BUFF_IN)[3]] >> 0); \
 }
 
-int base64_encode(FILE *input, FILE *output)
+inline int base64_encode(const char *input, size_t size, char *output)
 {
-	char buffer[BASE64_BUFFER_SIZE];
+	size_t i;
+	for(i = 0 ; i < (size / 3) ; i++)
+	{
+		BASE64_ENCODE_3(input + (3 * i), output + (4 * i));
+	}
+	if((size % 3) == 2)
+	{
+		BASE64_ENCODE_2(input + (3 * i), output + (4 * i));
+	}
+	else if((size % 3) == 1)
+	{
+		BASE64_ENCODE_1(input + (3 * i), output + (4 * i));
+	}
+	return 0;
+}
+
+inline int base64_decode(const char *input, size_t size, char *output)
+{
+	if((size % 4) != 0)
+	{
+		return BASE64_ERROR_DECODE_SIZE;
+	}
+	for(size_t i = 0 ; i < (size / 4) ; i++)
+	{
+		BASE64_DECODE(input + (4 * i), output + (3 * i));
+	}
+	return 0;
+}
+
+int base64_encode_file(FILE *input, FILE *output)
+{
+	char buffer[BASE64_ENCODE_BUFFER_SIZE];
 	char out_bytes[4];
 	size_t read;
 	size_t encoded;
@@ -57,7 +88,7 @@ int base64_encode(FILE *input, FILE *output)
 	size_t written;
 	do
 	{
-		read = fread(buffer, 1, BASE64_BUFFER_SIZE, input);
+		read = fread(buffer, 1, BASE64_ENCODE_BUFFER_SIZE, input);
 		encoded = 0;
 		if(read % 3 == 0)
 		{
@@ -100,14 +131,27 @@ int base64_encode(FILE *input, FILE *output)
 				}
 			}
 		}
-	} while(read == BASE64_BUFFER_SIZE);
+	} while(read == BASE64_ENCODE_BUFFER_SIZE);
 	if(!feof(input))
 		return BASE64_ERROR_READING;
 	return 0;
 }
 
-int base64_decode(FILE *input, FILE *output)
+int base64_decode_file(FILE *input, FILE *output)
 {
-	
+	char buffer_in[BASE64_DECODE_BUFFER_SIZE];
+	char buffer_out[BASE64_DECODED_SIZE(BASE64_DECODE_BUFFER_SIZE)];
+	size_t read;
+	size_t written;
+	do
+	{
+		read = fread(buffer_in, 1, BASE64_DECODE_BUFFER_SIZE, input);
+		base64_decode(buffer_in, read, buffer_out);
+		written = fwrite(buffer_out, BASE64_DECODED_SIZE(read), 1, output);
+		if(written < 1)
+			return BASE64_ERROR_WRITING;
+	} while(read == BASE64_DECODE_BUFFER_SIZE);
+	if(!feof(input))
+		return BASE64_ERROR_READING;
 	return 0;
 }
