@@ -82,7 +82,7 @@ inline int base64_decode(const char *input, size_t size, char *output, size_t *o
 	return 0;
 }
 
-int base64_encode_file(FILE *input, FILE *output)
+int base64_encode_file2(FILE *input, FILE *output)
 {
 	char buffer[BASE64_ENCODE_BUFFER_SIZE];
 	char out_bytes[4];
@@ -141,6 +141,25 @@ int base64_encode_file(FILE *input, FILE *output)
 	return 0;
 }
 
+int base64_encode_file(FILE *input, FILE *output)
+{
+	char buffer_in[BASE64_ENCODE_BUFFER_SIZE];
+	char buffer_out[BASE64_ENCODED_SIZE(BASE64_ENCODE_BUFFER_SIZE)];
+	size_t read;
+	size_t written;
+	do
+	{
+		read = fread(buffer_in, 1, BASE64_ENCODE_BUFFER_SIZE, input);
+		base64_encode(buffer_in, read, buffer_out);
+		written = fwrite(buffer_out, BASE64_ENCODED_SIZE(read), 1, output);
+		if(written < 1 && read > 0)
+			return BASE64_ERROR_WRITING;
+	} while(read == BASE64_ENCODE_BUFFER_SIZE);
+	if(!feof(input))
+		return BASE64_ERROR_READING;
+	return 0;
+}
+
 int base64_decode_file(FILE *input, FILE *output)
 {
 	char buffer_in[BASE64_DECODE_BUFFER_SIZE];
@@ -153,7 +172,7 @@ int base64_decode_file(FILE *input, FILE *output)
 		read = fread(buffer_in, 1, BASE64_DECODE_BUFFER_SIZE, input);
 		base64_decode(buffer_in, read, buffer_out, &decoded);
 		written = fwrite(buffer_out, decoded, 1, output);
-		if(written < 1)
+		if(written < 1 && read > 0)
 			return BASE64_ERROR_WRITING;
 	} while(read == BASE64_DECODE_BUFFER_SIZE);
 	if(!feof(input))

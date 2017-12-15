@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
 	if(argc != 4)
 	{
 		printf("Usage:\n");
-		printf("base64 <e|encode|d|decode> <file_in> <file_out>\n");
+		printf("base64 e|encode|d|decode <file_in> <file_out>\n");
 		printf("If <file_in> is set to * the program reads from stdin\n");
 		printf("If <file_out> is set to * the program writes to stdout\n");
 		return BASE64_ERROR_ARGS;
