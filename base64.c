@@ -82,65 +82,6 @@ inline int base64_decode(const char *input, size_t size, char *output, size_t *o
 	return 0;
 }
 
-int base64_encode_file2(FILE *input, FILE *output)
-{
-	char buffer[BASE64_ENCODE_BUFFER_SIZE];
-	char out_bytes[4];
-	size_t read;
-	size_t encoded;
-	size_t to_encode;
-	size_t written;
-	do
-	{
-		read = fread(buffer, 1, BASE64_ENCODE_BUFFER_SIZE, input);
-		encoded = 0;
-		if(read % 3 == 0)
-		{
-			while(encoded < read)
-			{
-				BASE64_ENCODE_3(buffer + encoded, out_bytes)
-				written = fwrite(out_bytes, 4, 1, output);
-				if(written < 1)
-					return BASE64_ERROR_WRITING;
-				encoded += 3;
-			}
-		}
-		else
-		{
-			while(encoded < read)
-			{
-				to_encode = read - encoded;
-				if(to_encode < 3)
-				{
-					if(to_encode == 1)
-					{
-						BASE64_ENCODE_1(buffer + encoded, out_bytes)
-					}
-					else /* (to_encode == 2) */
-					{
-						BASE64_ENCODE_2(buffer + encoded, out_bytes)
-					}
-					written = fwrite(out_bytes, 4, 1, output);
-					if(written < 1)
-						return BASE64_ERROR_WRITING;
-					encoded = read;
-				}
-				else
-				{
-					BASE64_ENCODE_3(buffer + encoded, out_bytes)
-					written = fwrite(out_bytes, 4, 1, output);
-					if(written < 1)
-						return BASE64_ERROR_WRITING;
-					encoded += 3;
-				}
-			}
-		}
-	} while(read == BASE64_ENCODE_BUFFER_SIZE);
-	if(!feof(input))
-		return BASE64_ERROR_READING;
-	return 0;
-}
-
 int base64_encode_file(FILE *input, FILE *output)
 {
 	char buffer_in[BASE64_ENCODE_BUFFER_SIZE];
