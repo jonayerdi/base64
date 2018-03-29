@@ -39,7 +39,7 @@ freely, subject to the following restrictions:
 /* !! Must be a multiple of 4 !! */
 #define BASE64_DECODE_BUFFER_SIZE 512
 
-int base64_encode(const char *input, size_t size, char *output);
+void base64_encode(const char *input, size_t size, char *output);
 int base64_decode(const char *input, size_t size, char *output, size_t *output_size);
 
 int base64_encode_file(FILE *input, FILE *output);
