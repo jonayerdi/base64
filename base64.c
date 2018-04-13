@@ -68,7 +68,7 @@ char const base64_decode_lookup[]
 	(BUFF_OUT)[2] = (base64_decode_lookup[(unsigned char)(BUFF_IN)[2]] << 6) | (base64_decode_lookup[(unsigned char)(BUFF_IN)[3]] >> 0); \
 }
 
-inline void base64_encode(const char *input, size_t size, char *output)
+void base64_encode(const char *input, size_t size, char *output)
 {
 	size_t i;
 	for(i = 0 ; i < (size / 3) ; i++)
@@ -85,9 +85,13 @@ inline void base64_encode(const char *input, size_t size, char *output)
 	}
 }
 
-inline int base64_decode(const char *input, size_t size, char *output, size_t *output_size)
+int base64_decode(const char *input, size_t size, char *output, size_t *output_size)
 {
-	if(size > 0) /* TODO: remove? */
+	if(size == 0)
+	{
+		*output_size = 0;
+	}
+	else
 	{
 		if((size % 4) != 0)
 		{
@@ -107,13 +111,15 @@ int base64_encode_file(FILE *input, FILE *output)
 	char buffer_in[BASE64_ENCODE_BUFFER_SIZE];
 	char buffer_out[BASE64_ENCODED_SIZE(BASE64_ENCODE_BUFFER_SIZE)];
 	size_t read;
+	size_t encoded;
 	size_t written;
 	do
 	{
 		read = fread(buffer_in, 1, BASE64_ENCODE_BUFFER_SIZE, input);
 		base64_encode(buffer_in, read, buffer_out);
-		written = fwrite(buffer_out, BASE64_ENCODED_SIZE(read), 1, output);
-		if(written < 1 && read > 0)
+		encoded = BASE64_ENCODED_SIZE(read);
+		written = fwrite(buffer_out, encoded, 1, output);
+		if(written < 1 && encoded > 0)
 			return BASE64_ERROR_WRITING;
 	} while(read == BASE64_ENCODE_BUFFER_SIZE);
 	if(!feof(input))
@@ -123,6 +129,7 @@ int base64_encode_file(FILE *input, FILE *output)
 
 int base64_decode_file(FILE *input, FILE *output)
 {
+	int error;
 	char buffer_in[BASE64_DECODE_BUFFER_SIZE];
 	char buffer_out[BASE64_DECODED_SIZE(BASE64_DECODE_BUFFER_SIZE)];
 	size_t read;
@@ -131,9 +138,11 @@ int base64_decode_file(FILE *input, FILE *output)
 	do
 	{
 		read = fread(buffer_in, 1, BASE64_DECODE_BUFFER_SIZE, input);
-		base64_decode(buffer_in, read, buffer_out, &decoded); /* TODO: check for errors */
+		error = base64_decode(buffer_in, read, buffer_out, &decoded);
+		if(error)
+			return error;
 		written = fwrite(buffer_out, decoded, 1, output);
-		if(written < 1 && read > 0)
+		if(written < 1 && decoded > 0)
 			return BASE64_ERROR_WRITING;
 	} while(read == BASE64_DECODE_BUFFER_SIZE);
 	if(!feof(input))
