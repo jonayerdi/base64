@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
 		/* Print errors if necessary */
 		switch(retval)
 		{
-			case 0:
+			case BASE64_OK:
 				/* OK */
 				break;
 			case BASE64_ERROR_READING:
@@ -130,10 +130,10 @@ int main(int argc, char *argv[])
 			case BASE64_ERROR_WRITING:
 				printf("Error writing to output file");
 				break;
-			case BASE64_ERROR_DECODE_BYTE:
+			case BASE64_ERROR_DECODE_INVALID_BYTE:
 				printf("Error decoding: Invalid input character");
 				break;
-			case BASE64_ERROR_DECODE_SIZE:
+			case BASE64_ERROR_DECODE_INVALID_SIZE:
 				printf("Error decoding: Invalid input length");
 				break;
 			default:

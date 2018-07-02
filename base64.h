@@ -23,16 +23,17 @@ freely, subject to the following restrictions:
 #ifndef _BASE64_H
 #define _BASE64_H
 
-#include <stddef.h>
-#include <stdio.h>
+#include <stddef.h> /* size_t, NULL */
+#include <stdio.h> /* FILE */
 
 #define BASE64_ENCODED_SIZE(DECODED_SIZE) ((((DECODED_SIZE) + 2) / 3) * 4)
 #define BASE64_DECODED_SIZE(ENCODED_SIZE) (((ENCODED_SIZE) / 4) * 3)
 
+#define BASE64_OK 0
 #define BASE64_ERROR_READING -1
 #define BASE64_ERROR_WRITING -2
-#define BASE64_ERROR_DECODE_BYTE -3
-#define BASE64_ERROR_DECODE_SIZE -4
+#define BASE64_ERROR_DECODE_INVALID_BYTE -3
+#define BASE64_ERROR_DECODE_INVALID_SIZE -4
 
 /* !! Must be a multiple of 3 !! */
 #define BASE64_ENCODE_BUFFER_SIZE 3072
@@ -40,7 +41,7 @@ freely, subject to the following restrictions:
 #define BASE64_DECODE_BUFFER_SIZE 512
 
 void base64_encode(const char *input, size_t size, char *output);
-int base64_decode(const char *input, size_t size, char *output, size_t *output_size);
+int base64_decode(const char *input, size_t size, char *output, size_t *output_size, size_t *error_offset);
 
 int base64_encode_file(FILE *input, FILE *output);
 int base64_decode_file(FILE *input, FILE *output);
