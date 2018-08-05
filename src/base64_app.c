@@ -25,6 +25,7 @@ freely, subject to the following restrictions:
 #include <stdio.h>
 
 #include "base64.h"
+#include "base64_file.h"
 
 #define BASE64_MODE_NULL 0
 #define BASE64_MODE_ENCODE 1
