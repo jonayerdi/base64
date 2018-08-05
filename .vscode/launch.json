@@ -1,7 +1,34 @@
 {
     "version": "0.2.0",
     "configurations": [
-
+        {
+            "name": "(lldb) Launch",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceRoot}/build/bin/base64.exe",
+            "args": ["e", "*", "*"],
+            "cwd": "${workspaceFolder}/build/bin"
+        },
+        {
+            "name": "(gdb) Launch",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceRoot}/build/bin/base64.exe",
+            "args": ["e", "*", "*"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceRoot}/build/bin",
+            "environment": [],
+            "externalConsole": true,
+            "MIMode": "gdb",
+            "miDebuggerPath": "",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
         {
             "name": "(Windows) Launch",
             "type": "cppvsdbg",
