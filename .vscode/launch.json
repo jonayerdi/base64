@@ -6,10 +6,10 @@
             "name": "(Windows) Launch",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceRoot}/base64.exe",
+            "program": "${workspaceRoot}/build/bin/base64.exe",
             "args": ["e", "*", "*"],
             "stopAtEntry": false,
-            "cwd": "${workspaceRoot}",
+            "cwd": "${workspaceRoot}/build/bin",
             "environment": [],
             "externalConsole": true
         }
