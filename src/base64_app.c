@@ -27,6 +27,8 @@ freely, subject to the following restrictions:
 #include "base64.h"
 #include "base64_file.h"
 
+#define BASE64_STDIO_FILE "."
+
 #define BASE64_MODE_NULL 0
 #define BASE64_MODE_ENCODE 1
 #define BASE64_MODE_DECODE 2
@@ -58,8 +60,8 @@ int main(int argc, char *argv[])
 	{
 		printf("Usage:\n");
 		printf("base64 e|encode|d|decode <file_in> <file_out>\n");
-		printf("If <file_in> is set to * the program reads from stdin\n");
-		printf("If <file_out> is set to * the program writes to stdout");
+		printf("If <file_in> is set to %s the program reads from stdin\n", BASE64_STDIO_FILE);
+		printf("If <file_out> is set to %s the program writes to stdout\n", BASE64_STDIO_FILE);
 		return BASE64_ERROR_ARGS;
 	}
 	/* Parse args and run program */
@@ -72,11 +74,11 @@ int main(int argc, char *argv[])
 			mode = BASE64_MODE_DECODE;
 		else
 		{
-			printf("Error: first argument must be one of these:\ne\nencode\nd\ndecode");
+			printf("Error: first argument must be one of these:\ne\nencode\nd\ndecode\n");
 			return BASE64_ERROR_PARSE_ARG1;
 		}
 		/* Parse arg 2 -> Input stream */
-		if(!strcmp(argv[2], "*"))
+		if(!strcmp(argv[2], BASE64_STDIO_FILE))
 		{
 			input = stdin;
 			mode |= BASE64_MODE_STDIN;
@@ -86,12 +88,12 @@ int main(int argc, char *argv[])
 			input = fopen(argv[2], "rb");
 			if(input == NULL)
 			{
-				printf("Error opening input file %s", argv[2]);
+				printf("Error opening input file %s\n", argv[2]);
 				return BASE64_ERROR_OPEN_INPUT;
 			}
 		}
 		/* Parse arg 3 -> Output stream */
-		if(!strcmp(argv[3], "*"))
+		if(!strcmp(argv[3], BASE64_STDIO_FILE))
 		{
 			output = stdout;
 			mode |= BASE64_MODE_STDOUT;
@@ -102,14 +104,14 @@ int main(int argc, char *argv[])
 			if(output != NULL)
 			{
 				BASE64_CLOSE_STREAMS(input, output, mode);
-				printf("Error: output file %s already exists", argv[3]);
+				printf("Error: output file %s already exists\n", argv[3]);
 				return BASE64_ERROR_OUTPUT_EXISTS;
 			}
 			output = fopen(argv[3], "wb");
 			if(output == NULL)
 			{
 				BASE64_CLOSE_STREAMS(input, output, mode);
-				printf("Error opening output file %s", argv[3]);
+				printf("Error opening output file %s\n", argv[3]);
 				return BASE64_ERROR_OPEN_OUTPUT;
 			}
 		}
@@ -126,19 +128,19 @@ int main(int argc, char *argv[])
 				/* OK */
 				break;
 			case BASE64_ERROR_READING:
-				printf("Error reading from input file");
+				printf("Error reading from input file\n");
 				break;
 			case BASE64_ERROR_WRITING:
-				printf("Error writing to output file");
+				printf("Error writing to output file\n");
 				break;
 			case BASE64_ERROR_DECODE_INVALID_BYTE:
-				printf("Error decoding: Invalid input character");
+				printf("Error decoding: Invalid input character\n");
 				break;
 			case BASE64_ERROR_DECODE_INVALID_SIZE:
-				printf("Error decoding: Invalid input length");
+				printf("Error decoding: Invalid input length\n");
 				break;
 			default:
-				printf("Unknown error code: %d", retval);
+				printf("Unknown error code: %d\n", retval);
 				break;
 		}
 		/* Close streams and return */

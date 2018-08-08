@@ -1,3 +1,24 @@
+/***********************************************************************************
+zlib License
+
+Copyright (c) 2017 Jon Ayerdi
+
+This software is provided 'as-is', without any express or implied
+warranty. In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+***********************************************************************************/
 
 #include "base64_file.h"
 
@@ -10,7 +31,7 @@ int base64_encode_file(FILE *input, FILE *output)
 	size_t written;
 	do
 	{
-		read = fread(buffer_in, 1, BASE64_ENCODE_BUFFER_SIZE, input);
+		read = fread(buffer_in, 1, BASE64_ENCODE_BUFFER_SIZE, input); //TODO: if(read != BASE64_ENCODE_BUFFER_SIZE)
 		base64_encode(buffer_in, read, buffer_out);
 		encoded = BASE64_ENCODED_SIZE(read);
 		written = fwrite(buffer_out, encoded, 1, output);
@@ -32,8 +53,8 @@ int base64_decode_file(FILE *input, FILE *output)
 	size_t written;
 	do
 	{
-		read = fread(buffer_in, 1, BASE64_DECODE_BUFFER_SIZE, input);
-		error = base64_decode(buffer_in, read, buffer_out, &decoded, NULL);
+		read = fread(buffer_in, 1, BASE64_DECODE_BUFFER_SIZE, input); //TODO: if(read != BASE64_DECODE_BUFFER_SIZE)
+		error = base64_decode(buffer_in, read, buffer_out, &decoded, NULL); //TODO: Get error_offset
 		if(error)
 			return error;
 		written = fwrite(buffer_out, decoded, 1, output);
