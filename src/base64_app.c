@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
 				fprintf(stderr, "Error writing to output file\n");
 				break;
 			case BASE64_ERROR_DECODE_INVALID_BYTE:
-				fprintf(stderr, "Error decoding: Invalid input character at offset %zx\n", error_offset);
+				fprintf(stderr, "Error decoding: Invalid input character at offset %u\n", (unsigned)error_offset);
 				break;
 			case BASE64_ERROR_DECODE_INVALID_SIZE:
 				fprintf(stderr, "Error decoding: Invalid input length\n");
