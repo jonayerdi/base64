@@ -29,17 +29,11 @@ freely, subject to the following restrictions:
 #define BASE64_DECODED_SIZE(ENCODED_SIZE) (((ENCODED_SIZE) / 4) * 3)
 
 #define BASE64_OK 0
-#define BASE64_ERROR_READING -1
-#define BASE64_ERROR_WRITING -2
-#define BASE64_ERROR_DECODE_INVALID_BYTE -3
-#define BASE64_ERROR_DECODE_INVALID_SIZE -4
+#define BASE64_ERROR_DECODE_INVALID_BYTE -1
+#define BASE64_ERROR_DECODE_INVALID_SIZE -2
 
-/* !! Must be a multiple of 3 !! */
-#define BASE64_ENCODE_BUFFER_SIZE 3072
-/* !! Must be a multiple of 4 !! */
-#define BASE64_DECODE_BUFFER_SIZE 512
-
-void base64_encode(const char *input, size_t size, char *output);
-int base64_decode(const char *input, size_t size, char *output, size_t *output_size, size_t *error_offset);
+void base64_encode_aligned(const char * restrict input, size_t size, char * restrict output);
+void base64_encode(const char * restrict input, size_t size, char * restrict output);
+int base64_decode(const char * restrict input, size_t size, char * restrict output, size_t *output_size, size_t *error_offset);
 
 #endif /* _BASE64_H */

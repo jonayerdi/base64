@@ -25,7 +25,15 @@ freely, subject to the following restrictions:
 #include "base64.h"
 #include <stdio.h> /* FILE */
 
+#define BASE64_ERROR_READING -3
+#define BASE64_ERROR_WRITING -4
+
+/* !! Must be a multiple of 3 !! */
+#define BASE64_ENCODE_BUFFER_SIZE 3072
+/* !! Must be a multiple of 4 !! */
+#define BASE64_DECODE_BUFFER_SIZE 4096
+
 int base64_encode_file(FILE *input, FILE *output);
-int base64_decode_file(FILE *input, FILE *output);
+int base64_decode_file(FILE *input, FILE *output, size_t *error_offset);
 
 #endif /* _BASE64_FILE_H */

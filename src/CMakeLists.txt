@@ -11,4 +11,3 @@ set(SRCS
 			base64_app.c
             )
 add_executable(base64 ${SRCS} ${HEADERS})
-#install(TARGETS base64 DESTINATION bin)

@@ -36,8 +36,6 @@ int const base64_decode_lookup[]
 	, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA
 	, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA
 	, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA };
-#undef NA
-#undef PADDING
 
 #define BASE64_PADDING_CHAR ('=')
 
@@ -72,26 +70,37 @@ int const base64_decode_lookup[]
 	(BUFF_OUT)[2] = (((unsigned char)base64_decode_lookup[(unsigned char)(BUFF_IN)[2]]) << 6) | (((unsigned char)base64_decode_lookup[(unsigned char)(BUFF_IN)[3]]) >> 0); \
 }
 
-#define BASE64_IS_VALID_BYTE(BYTE) (base64_decode_lookup[(unsigned char)(BYTE)] != -1 && (((char)(BYTE)) != BASE64_PADDING_CHAR))
+#define BASE64_IS_VALID_BYTE(BYTE) (base64_decode_lookup[(unsigned char)(BYTE)] != NA && (((char)(BYTE)) != BASE64_PADDING_CHAR))
 
-void base64_encode(const char *input, size_t size, char *output)
+void base64_encode_aligned(const char * restrict input, size_t size, char * restrict output)
 {
 	size_t i;
 	for(i = 0 ; i < (size / 3) ; i++)
 	{
-		BASE64_ENCODE_3(input + (3 * i), output + (4 * i));
-	}
-	if((size % 3) == 2)
-	{
-		BASE64_ENCODE_2(input + (3 * i), output + (4 * i));
-	}
-	else if((size % 3) == 1)
-	{
-		BASE64_ENCODE_1(input + (3 * i), output + (4 * i));
+		BASE64_ENCODE_3(input, output);
+		input += 3, output += 4;
 	}
 }
 
-int base64_decode(const char *input, size_t size, char *output, size_t *output_size, size_t *error_offset)
+void base64_encode(const char * restrict input, size_t size, char * restrict output)
+{
+	size_t i;
+	for(i = 0 ; i < (size / 3) ; i++)
+	{
+		BASE64_ENCODE_3(input, output);
+		input += 3, output += 4;
+	}
+	if((size % 3) == 2)
+	{
+		BASE64_ENCODE_2(input, output);
+	}
+	else if((size % 3) == 1)
+	{
+		BASE64_ENCODE_1(input, output);
+	}
+}
+
+int base64_decode(const char * restrict input, size_t size, char * restrict output, size_t *output_size, size_t *error_offset)
 {
 	if(size == 0)
 	{
@@ -99,6 +108,7 @@ int base64_decode(const char *input, size_t size, char *output, size_t *output_s
 	}
 	else
 	{
+		*output_size = BASE64_DECODED_SIZE(size);
 		size_t iterations = (size / 4) - 1;
 		if((size % 4) != 0)
 		{
@@ -109,7 +119,8 @@ int base64_decode(const char *input, size_t size, char *output, size_t *output_s
 		{
 			for(size_t j = 0 ; j < 4 ; j++)
 			{
-				if(!BASE64_IS_VALID_BYTE(input[4*i + j]))
+				/* Check for invalid base64 input */
+				if(!BASE64_IS_VALID_BYTE(input[j]))
 				{
 					if(error_offset != NULL) 
 					{
@@ -118,15 +129,16 @@ int base64_decode(const char *input, size_t size, char *output, size_t *output_s
 					return BASE64_ERROR_DECODE_INVALID_BYTE;
 				}
 			}
-			BASE64_DECODE(input + (4 * i), output + (3 * i));
+			BASE64_DECODE(input, output);
+			input += 4, output += 3;
 		}
 		/* Decode last 4 bytes */
-		*output_size = BASE64_DECODED_SIZE(size);
 		for(size_t j = 0 ; j < 4 ; j++)
 		{
-			if(!BASE64_IS_VALID_BYTE(input[4*iterations + j]))
+			/* Check for invalid base64 input */
+			if(!BASE64_IS_VALID_BYTE(input[j]))
 			{
-				if(j > 1 && input[4*iterations + j] == BASE64_PADDING_CHAR) 
+				if(j > 1 && input[j] == BASE64_PADDING_CHAR) 
 				{
 					--(*output_size);
 				}
@@ -140,7 +152,16 @@ int base64_decode(const char *input, size_t size, char *output, size_t *output_s
 				}
 			}
 		}
-		BASE64_DECODE(input + (4 * iterations), output + (3 * iterations));
+		/* Check for padding char followed by non-padding char (invalid) */
+		if(input[2] == BASE64_PADDING_CHAR && input[3] != BASE64_PADDING_CHAR)
+		{
+			if(error_offset != NULL) 
+			{
+				*error_offset = 4*iterations + 3;
+			}
+			return BASE64_ERROR_DECODE_INVALID_BYTE;
+		}
+		BASE64_DECODE(input, output);
 	}
 	return BASE64_OK;
 }

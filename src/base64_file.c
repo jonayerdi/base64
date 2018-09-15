@@ -31,35 +31,55 @@ int base64_encode_file(FILE *input, FILE *output)
 	size_t written;
 	do
 	{
-		read = fread(buffer_in, 1, BASE64_ENCODE_BUFFER_SIZE, input); //TODO: if(read != BASE64_ENCODE_BUFFER_SIZE)
-		base64_encode(buffer_in, read, buffer_out);
-		encoded = BASE64_ENCODED_SIZE(read);
-		written = fwrite(buffer_out, encoded, 1, output);
-		if(written < 1 && encoded > 0)
-			return BASE64_ERROR_WRITING;
-	} while(read == BASE64_ENCODE_BUFFER_SIZE);
+		read = fread(buffer_in, 1, BASE64_ENCODE_BUFFER_SIZE, input);
+		if(read == BASE64_ENCODE_BUFFER_SIZE)
+		{
+			base64_encode_aligned(buffer_in, read, buffer_out);
+			encoded = BASE64_ENCODED_SIZE(BASE64_ENCODE_BUFFER_SIZE);
+			written = fwrite(buffer_out, encoded, 1, output);
+			if(!written && encoded)
+				return BASE64_ERROR_WRITING;
+		}
+		else
+		{
+			base64_encode(buffer_in, read, buffer_out);
+			encoded = BASE64_ENCODED_SIZE(read);
+			written = fwrite(buffer_out, encoded, 1, output);
+			if(!written && encoded)
+				return BASE64_ERROR_WRITING;
+			break;
+		}
+	} while(1);
 	if(!feof(input))
 		return BASE64_ERROR_READING;
 	return BASE64_OK;
 }
 
-int base64_decode_file(FILE *input, FILE *output)
+int base64_decode_file(FILE *input, FILE *output, size_t *error_offset)
 {
 	int error;
 	char buffer_in[BASE64_DECODE_BUFFER_SIZE];
 	char buffer_out[BASE64_DECODED_SIZE(BASE64_DECODE_BUFFER_SIZE)];
+	size_t iterations = 0;
 	size_t read;
 	size_t decoded;
 	size_t written;
 	do
 	{
-		read = fread(buffer_in, 1, BASE64_DECODE_BUFFER_SIZE, input); //TODO: if(read != BASE64_DECODE_BUFFER_SIZE)
-		error = base64_decode(buffer_in, read, buffer_out, &decoded, NULL); //TODO: Get error_offset
+		read = fread(buffer_in, 1, BASE64_DECODE_BUFFER_SIZE, input);
+		error = base64_decode(buffer_in, read, buffer_out, &decoded, error_offset);
 		if(error)
+		{
+			if(error_offset != NULL)
+			{
+				*error_offset += iterations * BASE64_DECODE_BUFFER_SIZE;
+			}
 			return error;
+		}
 		written = fwrite(buffer_out, decoded, 1, output);
-		if(written < 1 && decoded > 0)
+		if(!written && decoded)
 			return BASE64_ERROR_WRITING;
+		iterations++;
 	} while(read == BASE64_DECODE_BUFFER_SIZE);
 	if(!feof(input))
 		return BASE64_ERROR_READING;
