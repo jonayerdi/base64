@@ -29,8 +29,8 @@ freely, subject to the following restrictions:
 
 /* This is to fix newline conversion for stdin and stdout */
 #ifdef _WIN32
-	#include <io.h>
-	#include <fcntl.h>
+#include <io.h>
+#include <fcntl.h>
 #endif
 
 #define BASE64_STDIO_FILE "."
@@ -88,6 +88,10 @@ int main(int argc, char *argv[])
 		/* Parse arg 2 -> Input stream */
 		if(!strcmp(argv[2], BASE64_STDIO_FILE))
 		{
+			/* This is to fix newline conversion for stdin and stdout */
+			#ifdef _WIN32
+			_setmode(_fileno(stdin), O_BINARY);
+			#endif
 			input = stdin;
 			mode |= BASE64_MODE_STDIN;
 		}
@@ -105,8 +109,7 @@ int main(int argc, char *argv[])
 		{
 			/* This is to fix newline conversion for stdin and stdout */
 			#ifdef _WIN32
-				setmode(fileno(stdout), O_BINARY);
-				setmode(fileno(stdin), O_BINARY);
+			_setmode(_fileno(stdout), O_BINARY);
 			#endif
 			output = stdout;
 			mode |= BASE64_MODE_STDOUT;

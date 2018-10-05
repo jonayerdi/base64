@@ -22,8 +22,8 @@ def main():
 	files = [f for f in os.listdir() if f.startswith("decoded")]
 	for decodedfile in files:
 		encodedfile = "encoded" + decodedfile[7]
-		encoder = subprocess.Popen([BASE64_BINARY, "e", decodedfile, "."], stdout=subprocess.PIPE, stderr=subprocess.PIPE);
-		decoder = subprocess.Popen([BASE64_BINARY, "d", encodedfile, "."], stdout=subprocess.PIPE, stderr=subprocess.PIPE);
+		encoder = subprocess.Popen([BASE64_BINARY, "e", decodedfile, "."], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+		decoder = subprocess.Popen([BASE64_BINARY, "d", encodedfile, "."], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 		checkResult("Encode " + decodedfile, encoder, encodedfile)
 		checkResult("Decode " + encodedfile, decoder, decodedfile)
 
